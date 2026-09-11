@@ -960,8 +960,16 @@ function notifyNewUpdate(u){
   n.onclick=()=>{window.focus();n.close();};
 }
 function doRefresh(){loadData();toast('Refreshed');}
-// Keep every open team tab current; localStorage remains the offline fallback.
-setInterval(()=>{ if(!document.hidden && !isSaving) loadData(); }, 30000);
+// Keep every open team tab current; never interrupt active typing or file selection.
+function userIsEditing(){
+  const el=document.activeElement;
+  if(!el)return false;
+  if(['INPUT','TEXTAREA','SELECT'].includes(el.tagName))return true;
+  return false;
+}
+setInterval(()=>{
+  if(!document.hidden && !isSaving && !userIsEditing()) loadData();
+}, 30000);
 
 // ── EXPORT MENU ──
 function toggleExportMenu(){
