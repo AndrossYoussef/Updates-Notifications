@@ -116,6 +116,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 /* Cats */
 .cat-row-sb{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:5px;cursor:pointer;margin-bottom:2px;}
 .cat-row-sb:hover{background:var(--bg);}
+.cat-tools{display:flex;gap:2px;margin-left:auto;opacity:0;transition:opacity .12s;}
+.cat-row-sb:hover .cat-tools{opacity:1;}
+.cat-tool{background:none;border:0;color:var(--text3);cursor:pointer;font-size:11px;padding:2px 3px;border-radius:3px;}
+.cat-tool:hover{background:var(--border);color:var(--text);}
+.cat-tool.delete:hover{color:var(--red);}
 .cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .cat-name-sb{flex:1;font-size:12px;font-weight:500;color:var(--text);}
 .cat-cnt{font-size:11px;color:var(--text3);background:var(--bg);border-radius:99px;padding:1px 7px;}
@@ -656,6 +661,10 @@ function buildSidebar(){
       <span class="cat-dot" style="background:${c.color}"></span>
       <span class="cat-name-sb">${esc(c.name)}</span>
       <span class="cat-cnt">${n}</span>
+      <span class="cat-tools">
+        <button class="cat-tool" onclick="renameCategory('${c.id}')" title="Rename category">✏</button>
+        <button class="cat-tool delete" onclick="deleteCategory('${c.id}')" title="Delete category">×</button>
+      </span>
     </div>`;
   }).join('');
   document.getElementById('statTotal').textContent=updates.length;
@@ -912,6 +921,28 @@ function addCategory(){
   const i=cats.length%cs.length;
   cats.push({id:uid(),name,color:cs[i],bg:bs[i],tx:ts[i]});
   save();inp.value='';buildCatSel();buildSidebar();buildTabs();toast('Category added');
+}
+function renameCategory(id){
+  const c=cats.find(x=>x.id===id);if(!c)return;
+  const name=prompt('New category name:',c.name);
+  if(name===null)return;
+  const clean=name.trim();
+  if(!clean){toast('Category name cannot be empty');return;}
+  if(cats.some(x=>x.id!==id&&x.name.toLowerCase()===clean.toLowerCase())){toast('A category with this name already exists');return;}
+  c.name=clean;
+  save();buildCatSel();buildSidebar();buildTabs();renderFeed();toast('Category renamed ✓');
+}
+function deleteCategory(id){
+  if(cats.length<=1){toast('Keep at least one category');return;}
+  const c=cats.find(x=>x.id===id);if(!c)return;
+  const fallback=cats.find(x=>x.id!==id&&x.name.toLowerCase()==='general')||cats.find(x=>x.id!==id);
+  const count=updates.filter(u=>u.catId===id).length;
+  const message=count?`Delete "${c.name}"? ${count} update(s) will move to "${fallback.name}".`:`Delete "${c.name}"?`;
+  if(!confirm(message))return;
+  updates.forEach(u=>{if(u.catId===id)u.catId=fallback.id;});
+  cats=cats.filter(x=>x.id!==id);
+  if(activeTab===id)activeTab='all';
+  save();buildCatSel();buildSidebar();buildTabs();renderFeed();toast('Category deleted');
 }
 
 // ── SORT / TABS ──
