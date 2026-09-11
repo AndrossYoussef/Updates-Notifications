@@ -199,6 +199,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 
 
 
+/* Accessibility and dense-link layout improvements */
+body{font-size:14px;line-height:1.45;}
+.team-name{font-size:13px;}.team-sub{font-size:10px;}
+.top-btn{font-size:13px;}
+.s-title{font-size:11px;}.s-btn{font-size:11px;}
+.link-list{padding:2px 10px 4px;max-height:260px;overflow-y:auto;}
+.link-group{margin:5px 0 9px;}
+.link-group-title{display:flex;align-items:center;gap:5px;padding:4px 5px;color:var(--text3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;position:sticky;top:0;background:var(--surface);z-index:1;}
+.link-group-title::before{content:'•';color:var(--orange);font-size:16px;line-height:0;}
+.link-row{padding:6px 5px;gap:7px;align-items:flex-start;}
+.link-row a{font-size:13px;line-height:1.35;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;}
+.link-acts{flex-shrink:0;opacity:.35;}.link-row:hover .link-acts{opacity:1;}
+.al-inp{font-size:12px;padding:7px 9px;}.al-save,.al-cancel{font-size:12px;}
+.flabel{font-size:11px;}.fta,.fsel,.finp{font-size:13px;}
+.dz-text{font-size:12px;}.dz-sub{font-size:11px;}
+.cat-name-sb{font-size:13px;}.cat-cnt{font-size:12px;}
+.how-body{font-size:12px;}
+.stat-pill{font-size:13px;}.search-inp,.sort-btn{font-size:13px;}
+.cat-tab{font-size:13px;}.card-txt{font-size:14px;}.card-meta{font-size:12px;}
+.card-act{font-size:12px;}.empty{font-size:14px;}
+@media (max-width:760px){
+  :root{--sidebar:240px}.topbar{padding:0 10px}.topbar-btns{gap:4px}.top-btn{padding:6px 8px}.brand svg{width:105px}.team-info{display:none}.stats-bar,.search-bar,.feed{padding-left:10px;padding-right:10px}.cat-tabs{padding:0 10px}
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -332,7 +356,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
     <div class="add-link-form" id="addLinkForm">
       <input class="al-inp" id="alLabel" placeholder="Label">
       <input class="al-inp" id="alUrl" placeholder="https://...">
-      <input class="al-inp" id="alGroup" placeholder="Group (optional)">
+      <input class="al-inp" id="alGroup" placeholder="Group (optional, e.g. Tools)">
       <div class="al-row">
         <button class="al-cancel" onclick="toggleAddLink()">Cancel</button>
         <button class="al-save" onclick="saveLink()">Save Link</button>
@@ -386,7 +410,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
         <li>Paste messages above — one or batch with <strong>====</strong> between.</li>
         <li>Pick the <strong>Category</strong> from the dropdown.</li>
         <li>Attach <strong>Screenshots</strong> if needed.</li>
-        <li>Hit <strong>Add to Board</strong> — visible to everyone.</li>
+        <li>Hit <strong>Add to Board</strong> — visible to everyone within a few seconds.</li>
         <li>Use <strong>Edit</strong> on a card to update text or add images.</li>
         <li>Use the 🔗 <strong>Links Library</strong> to save quick-access links.</li>
       </ol>
@@ -470,7 +494,7 @@ Object.keys(GIFS).forEach(function(k){
 const API_KEY = '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i';
 const API     = 'https://api.jsonbin.io/v3';
 // DATA_BIN is set below — DO NOT EDIT MANUALLY
-let   DATA_BIN = '6aa46945ffd5d16053fbc5e5';
+let   DATA_BIN = '6aa469e0ac6210605ac2321a';
 
 // ── STATE ──
 const DEF_CATS=[
@@ -806,7 +830,8 @@ function saveLink(){
   const label=document.getElementById('alLabel').value.trim();
   const url=document.getElementById('alUrl').value.trim();
   if(!label||!url){toast('Label and URL required');return;}
-  links.push({id:uid(),label,url});
+  const group=document.getElementById('alGroup').value.trim()||'General';
+  links.push({id:uid(),label,url,group});
   save();
   ['alLabel','alUrl','alGroup'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('addLinkForm').classList.remove('open');
@@ -821,14 +846,19 @@ function editLink(id){
 }
 function renderLinks(){
   const el=document.getElementById('linksList');
-  if(!links.length){el.innerHTML='<div style="padding:4px 12px;font-size:11px;color:var(--text3)">No links saved yet.</div>';return;}
-  el.innerHTML='<div class="link-list">'+links.map(l=>`
-    <div class="link-row">
-      <a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>
-      <div class="link-acts">
-        <button class="link-act" onclick="editLink('${l.id}')">✏</button>
-        <button class="link-act d" onclick="delLink('${l.id}')">×</button>
-      </div>
+  if(!links.length){el.innerHTML='<div style="padding:4px 12px;font-size:12px;color:var(--text3)">No links saved yet.</div>';return;}
+  const groups={};
+  links.forEach(l=>{const g=l.group||'General';(groups[g]??=[]).push(l);});
+  el.innerHTML='<div class="link-list">'+Object.entries(groups).map(([group,items])=>`
+    <div class="link-group">
+      <div class="link-group-title">${esc(group)} <span style="font-weight:500;letter-spacing:0">(${items.length})</span></div>
+      ${items.map(l=>`<div class="link-row">
+        <a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>
+        <div class="link-acts">
+          <button class="link-act" onclick="editLink('${l.id}')" title="Edit link">✏</button>
+          <button class="link-act d" onclick="delLink('${l.id}')" title="Delete link">×</button>
+        </div>
+      </div>`).join('')}
     </div>`).join('')+'</div>';
 }
 function toggleLinksList(){linksOpen=!linksOpen;document.getElementById('linksList').style.display=linksOpen?'':'none';}
@@ -863,6 +893,8 @@ function applyDark(on){
 }
 function toggleDark(){applyDark(!document.documentElement.hasAttribute('data-dark'));}
 function doRefresh(){loadData();toast('Refreshed');}
+// Keep every open team tab current; localStorage remains the offline fallback.
+setInterval(()=>{ if(!document.hidden && !isSaving) loadData(); }, 30000);
 
 // ── EXPORT MENU ──
 function toggleExportMenu(){
