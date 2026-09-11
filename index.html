@@ -209,6 +209,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 
 
 
+/* Time calculator */
+.time-calc{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;}
+.time-calc.open{display:flex;}
+.time-calc-card{width:min(420px,100%);background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 16px 50px rgba(0,0,0,.25);}
+.time-calc-title{display:flex;align-items:center;justify-content:space-between;font-size:18px;font-weight:700;margin-bottom:16px;}
+.time-calc-close{border:0;background:none;color:var(--text3);font-size:24px;cursor:pointer;line-height:1;}
+.time-calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.time-calc-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.time-calc-input{width:100%;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);font:inherit;font-size:16px;padding:9px;}
+.time-calc-result{margin-top:16px;padding:14px;border-radius:8px;background:var(--orange-bg);border:1px solid var(--orange-mid);}
+.time-calc-total{font-size:22px;font-weight:700;color:var(--orange);}
+.time-calc-variance{font-size:14px;font-weight:600;margin-top:5px;color:var(--text2);}
+.time-calc-hint{font-size:11px;color:var(--text3);margin-top:10px;line-height:1.5;}
 /* Accessibility and dense-link layout improvements */
 body{font-size:15px;line-height:1.5;}
 .team-name{font-size:14px;}.team-sub{font-size:11px;}
@@ -263,6 +276,7 @@ body{font-size:15px;line-height:1.5;}
     <button class="top-btn" onclick="enableNotifications()" id="notifyBtn" title="Enable notifications">
       <span id="notifyIcon">🔔</span><span id="notifyLabel">Notify me</span>
     </button>
+    <button class="top-btn" onclick="openTimeCalculator()" title="Calculate working time">⏱ Time</button>
     <div style="position:relative;">
       <button class="top-btn" onclick="toggleExportMenu()" id="exportBtn">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -475,6 +489,18 @@ body{font-size:15px;line-height:1.5;}
 
 
 
+<div class="time-calc" id="timeCalculator" onclick="if(event.target===this)closeTimeCalculator()">
+  <div class="time-calc-card">
+    <div class="time-calc-title"><span>⏱ Time Calculator</span><button class="time-calc-close" onclick="closeTimeCalculator()">×</button></div>
+    <div class="time-calc-grid">
+      <div><label class="time-calc-label" for="timeFrom">From</label><input class="time-calc-input" id="timeFrom" type="time" step="1" onchange="calculateTime()"></div>
+      <div><label class="time-calc-label" for="timeTo">To</label><input class="time-calc-input" id="timeTo" type="time" step="1" onchange="calculateTime()"></div>
+    </div>
+    <div style="margin-top:10px"><label class="time-calc-label" for="timeTarget">Target hours (optional)</label><input class="time-calc-input" id="timeTarget" type="number" min="0" step="0.25" value="8" oninput="calculateTime()"></div>
+    <div class="time-calc-result" id="timeResult"><div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Enter From and To times.</div></div>
+    <div class="time-calc-hint">If the To time is earlier than From, it is treated as the next day. Example: 15:00:00 → 20:00:00 = 5 hours.</div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <div class="lightbox" id="lightbox" onclick="closeLB()">
   <button class="lb-close">×</button>
@@ -1003,6 +1029,21 @@ setInterval(()=>{
   if(!document.hidden && !isSaving && !userIsEditing()) loadData();
 }, 3600000);
 
+function openTimeCalculator(){document.getElementById('timeCalculator').classList.add('open');calculateTime();}
+function closeTimeCalculator(){document.getElementById('timeCalculator').classList.remove('open');}
+function calculateTime(){
+  const from=document.getElementById('timeFrom').value;
+  const to=document.getElementById('timeTo').value;
+  const result=document.getElementById('timeResult');
+  if(!from||!to){result.innerHTML='<div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Enter From and To times.</div>';return;}
+  const parse=t=>{const p=t.split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0);};
+  let seconds=parse(to)-parse(from);if(seconds<0)seconds+=86400;
+  const hours=seconds/3600;
+  const target=parseFloat(document.getElementById('timeTarget').value);
+  let variance='';
+  if(Number.isFinite(target)&&target>0){const diff=hours-target;const abs=Math.abs(diff);const h=Math.floor(abs);const m=Math.round((abs-h)*60);const label=`${h}h ${String(m).padStart(2,'0')}m`;variance=diff>0?`Overtime: ${label}`:diff<0?`Lost time: ${label}`:'Exactly on target';}
+  result.innerHTML=`<div class="time-calc-total">Total Hours = ${hours.toFixed(2)} hours</div><div class="time-calc-variance">${variance}</div>`;
+}
 // ── EXPORT MENU ──
 function toggleExportMenu(){
   const m=document.getElementById('exportMenu');
