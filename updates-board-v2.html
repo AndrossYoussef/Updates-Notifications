@@ -496,7 +496,6 @@ body{font-size:15px;line-height:1.5;}
       <div><label class="time-calc-label" for="timeFrom">From</label><input class="time-calc-input" id="timeFrom" type="time" step="1" onchange="calculateTime()"></div>
       <div><label class="time-calc-label" for="timeTo">To</label><input class="time-calc-input" id="timeTo" type="time" step="1" onchange="calculateTime()"></div>
     </div>
-    <div style="margin-top:10px"><label class="time-calc-label" for="timeTarget">Target hours (optional)</label><input class="time-calc-input" id="timeTarget" type="number" min="0" step="0.25" value="8" oninput="calculateTime()"></div>
     <div class="time-calc-result" id="timeResult"><div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Enter From and To times.</div></div>
     <div class="time-calc-hint">If the To time is earlier than From, it is treated as the next day. Example: 15:00:00 → 20:00:00 = 5 hours.</div>
   </div>
@@ -1039,10 +1038,7 @@ function calculateTime(){
   const parse=t=>{const p=t.split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0);};
   let seconds=parse(to)-parse(from);if(seconds<0)seconds+=86400;
   const hours=seconds/3600;
-  const target=parseFloat(document.getElementById('timeTarget').value);
-  let variance='';
-  if(Number.isFinite(target)&&target>0){const diff=hours-target;const abs=Math.abs(diff);const h=Math.floor(abs);const m=Math.round((abs-h)*60);const label=`${h}h ${String(m).padStart(2,'0')}m`;variance=diff>0?`Overtime: ${label}`:diff<0?`Lost time: ${label}`:'Exactly on target';}
-  result.innerHTML=`<div class="time-calc-total">Total Hours = ${hours.toFixed(2)} hours</div><div class="time-calc-variance">${variance}</div>`;
+  result.innerHTML=`<div class="time-calc-total">Total Hours = ${hours.toFixed(2)} hours</div>`;
 }
 // ── EXPORT MENU ──
 function toggleExportMenu(){
