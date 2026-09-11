@@ -593,13 +593,19 @@ async function saveData() {
   isSaving = true;
   showSaving(true);
   try {
-    await fetch(`${API}/b/${DATA_BIN}`, {
+    const res = await fetch(`${API}/b/${DATA_BIN}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
       body: JSON.stringify({ updates, links, cats }),
     });
+    if (!res.ok) {
+      const detail = await res.text().catch(()=> '');
+      console.error('Shared save rejected', res.status, detail);
+      toast(`⚠ Shared save rejected (${res.status}) — image may be too large.`);
+    }
   } catch(e) {
-    toast('⚠ Save failed — saved locally as backup.');
+    console.error(e);
+    toast('⚠ Shared save failed — saved locally as backup.');
   }
   isSaving = false;
   showSaving(false);
@@ -781,11 +787,33 @@ function togglePin(id){
 }
 
 // ── FILES ──
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onerror=reject;
+    r.onload=ev=>{
+      const img=new Image();
+      img.onerror=reject;
+      img.onload=()=>{
+        const max=1000;
+        const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
+        canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+        const ctx=canvas.getContext('2d',{alpha:false});
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        let quality=0.68, out=canvas.toDataURL('image/jpeg',quality);
+        while(out.length>65000 && quality>0.38){ quality-=0.08; out=canvas.toDataURL('image/jpeg',quality); }
+        resolve(out);
+      };
+      img.src=ev.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
 function handleFiles(e, prevId, arr, editId){
   ;[...e.target.files].forEach(f=>{
-    const r=new FileReader();
-    r.onload=ev=>{
-      const src=ev.target.result;
+    compressImage(f).then(src=>{
       if(editId){
         const u=updates.find(x=>x.id===editId);
         if(u){
@@ -811,8 +839,7 @@ function handleFiles(e, prevId, arr, editId){
           prev.appendChild(wrap);
         }
       }
-    };
-    r.readAsDataURL(f);
+    }).catch(err=>{console.error(err);toast('⚠ Could not read this image.');});
   });
 }
 function removePendImg(idx,btn){pendImgs.splice(idx,1);btn.parentElement.remove();}
