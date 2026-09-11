@@ -254,6 +254,9 @@ body{font-size:14px;line-height:1.45;}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.22-6.5"/></svg>
       Refresh
     </button>
+    <button class="top-btn" onclick="enableNotifications()" id="notifyBtn" title="Enable notifications">
+      <span id="notifyIcon">🔔</span><span id="notifyLabel">Notify me</span>
+    </button>
     <div style="position:relative;">
       <button class="top-btn" onclick="toggleExportMenu()" id="exportBtn">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -514,6 +517,9 @@ let howOpen   = false;
 let addCatOpen= false;
 let isSaving  = false;
 let saveTimer  = null;
+let notificationsReady = false;
+let knownUpdateIds = new Set();
+let notificationsInitialized = false;
 
 // ── Firebase API ──
 
@@ -569,7 +575,14 @@ async function loadData() {
     });
     const json = await res.json();
     const d    = json.record || {};
-    updates = d.updates || [];
+    const incomingUpdates = d.updates || [];
+    if (notificationsInitialized) {
+      const newUpdates = incomingUpdates.filter(u=>!knownUpdateIds.has(u.id));
+      newUpdates.forEach(u=>notifyNewUpdate(u));
+    }
+    updates = incomingUpdates;
+    knownUpdateIds = new Set(updates.map(u=>u.id));
+    notificationsInitialized = true;
     links   = d.links   || [];
     cats    = (d.cats && d.cats.length) ? d.cats : JSON.parse(JSON.stringify(DEF_CATS));
   } catch(e) {
@@ -625,6 +638,7 @@ function showSaving(on) {
 // ── INIT ──
 function init(){
   if(localStorage.getItem('tlb3_dark')==='1') applyDark(true);
+  if('Notification' in window){ notificationsReady=Notification.permission==='granted'; updateNotificationButton(); }
   loadData();
   setupDrop('dropZone','fileIn','imgPrev',pendImgs);
 }
@@ -916,6 +930,35 @@ function applyDark(on){
   localStorage.setItem('tlb3_dark',on?'1':'0');
 }
 function toggleDark(){applyDark(!document.documentElement.hasAttribute('data-dark'));}
+
+function updateNotificationButton(){
+  const btn=document.getElementById('notifyBtn');
+  const label=document.getElementById('notifyLabel');
+  const icon=document.getElementById('notifyIcon');
+  if(!btn)return;
+  if(!('Notification' in window)){label.textContent='Not supported';icon.textContent='🔕';return;}
+  if(Notification.permission==='granted'){label.textContent='Notifications on';icon.textContent='🔔';btn.style.background='rgba(255,255,255,0.25)';}
+  else if(Notification.permission==='denied'){label.textContent='Notifications blocked';icon.textContent='🔕';}
+  else {label.textContent='Notify me';icon.textContent='🔔';}
+}
+async function enableNotifications(){
+  if(!('Notification' in window)){toast('Browser notifications are not supported here.');return;}
+  const permission=await Notification.requestPermission();
+  notificationsReady=permission==='granted';
+  updateNotificationButton();
+  if(notificationsReady)toast('Notifications enabled ✓');
+  else toast('Notifications were not enabled.');
+}
+function notifyNewUpdate(u){
+  if(!notificationsReady || Notification.permission!=='granted')return;
+  const text=String(u.msg||'').replace(/\s+/g,' ').trim();
+  const n=new Notification('New team update',{
+    body:`${u.name||'A teammate'}: ${text.slice(0,140)}${text.length>140?'…':''}`,
+    icon:'images.jpg',
+    tag:`update-${u.id}`
+  });
+  n.onclick=()=>{window.focus();n.close();};
+}
 function doRefresh(){loadData();toast('Refreshed');}
 // Keep every open team tab current; localStorage remains the offline fallback.
 setInterval(()=>{ if(!document.hidden && !isSaving) loadData(); }, 30000);
