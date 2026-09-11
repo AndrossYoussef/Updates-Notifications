@@ -960,7 +960,7 @@ function notifyNewUpdate(u){
   n.onclick=()=>{window.focus();n.close();};
 }
 function doRefresh(){loadData();toast('Refreshed');}
-// Keep every open team tab current; never interrupt active typing or file selection.
+// Sync once per hour automatically; the Refresh button remains available for immediate updates.
 function userIsEditing(){
   const el=document.activeElement;
   if(!el)return false;
@@ -969,7 +969,7 @@ function userIsEditing(){
 }
 setInterval(()=>{
   if(!document.hidden && !isSaving && !userIsEditing()) loadData();
-}, 30000);
+}, 3600000);
 
 // ── EXPORT MENU ──
 function toggleExportMenu(){
