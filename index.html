@@ -493,9 +493,10 @@ body{font-size:15px;line-height:1.5;}
   <div class="time-calc-card">
     <div class="time-calc-title"><span>⏱ Time Calculator</span><button class="time-calc-close" onclick="closeTimeCalculator()">×</button></div>
     <div class="time-calc-grid">
-      <div><label class="time-calc-label" for="timeFrom">From</label><input class="time-calc-input" id="timeFrom" type="time" step="1" onchange="calculateTime()"></div>
-      <div><label class="time-calc-label" for="timeTo">To</label><input class="time-calc-input" id="timeTo" type="time" step="1" onchange="calculateTime()"></div>
+      <div><label class="time-calc-label" for="timeFrom">From</label><input class="time-calc-input" id="timeFrom" type="time" step="1"></div>
+      <div><label class="time-calc-label" for="timeTo">To</label><input class="time-calc-input" id="timeTo" type="time" step="1"></div>
     </div>
+    <button class="add-btn" style="margin-top:14px" onclick="calculateTime()">Calculate Total</button>
     <div class="time-calc-result" id="timeResult"><div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Enter From and To times.</div></div>
     <div class="time-calc-hint">If the To time is earlier than From, it is treated as the next day. Example: 15:00:00 → 20:00:00 = 5 hours.</div>
   </div>
@@ -1031,14 +1032,26 @@ setInterval(()=>{
 function openTimeCalculator(){document.getElementById('timeCalculator').classList.add('open');calculateTime();}
 function closeTimeCalculator(){document.getElementById('timeCalculator').classList.remove('open');}
 function calculateTime(){
-  const from=document.getElementById('timeFrom').value;
-  const to=document.getElementById('timeTo').value;
+  const from=(document.getElementById('timeFrom').value||'').trim();
+  const to=(document.getElementById('timeTo').value||'').trim();
   const result=document.getElementById('timeResult');
-  if(!from||!to){result.innerHTML='<div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Enter From and To times.</div>';return;}
-  const parse=t=>{const p=t.split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0);};
-  let seconds=parse(to)-parse(from);if(seconds<0)seconds+=86400;
-  const hours=seconds/3600;
-  result.innerHTML=`<div class="time-calc-total">Total Hours = ${hours.toFixed(2)} hours</div>`;
+  if(!from||!to){result.innerHTML='<div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Please enter both From and To times.</div>';return;}
+  const parseTime=value=>{
+    const match=value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if(!match)return NaN;
+    const h=Number(match[1]),m=Number(match[2]),sec=Number(match[3]||0);
+    if(h>23||m>59||sec>59)return NaN;
+    return h*3600+m*60+sec;
+  };
+  const start=parseTime(from),end=parseTime(to);
+  if(!Number.isFinite(start)||!Number.isFinite(end)){
+    result.innerHTML='<div class="time-calc-total">Total Hours = —</div><div class="time-calc-variance">Please use a valid time format such as 15:00:00.</div>';return;
+  }
+  let seconds=end-start;if(seconds<0)seconds+=86400;
+  const hours=Math.floor(seconds/3600),minutes=Math.floor((seconds%3600)/60),remainingSeconds=seconds%60;
+  const decimal=(seconds/3600).toFixed(2);
+  const formatted=`${hours} hour${hours===1?'':'s'} ${minutes} minute${minutes===1?'':'s'}${remainingSeconds?` ${remainingSeconds} second${remainingSeconds===1?'':'s'}`:''}`;
+  result.innerHTML=`<div class="time-calc-total">Total Hours = ${decimal} hours</div><div class="time-calc-variance">${formatted}</div>`;
 }
 // ── EXPORT MENU ──
 function toggleExportMenu(){
