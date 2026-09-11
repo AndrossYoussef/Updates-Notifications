@@ -276,7 +276,35 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
   flex-direction:column;align-items:center;justify-content:center;gap:14px;
 ">
   <div style="width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-  <div style="font-size:13px;color:var(--text2);font-weight:500;">Loading board...</div>
+  <div id="loaderMsg" style="font-size:13px;color:var(--text2);font-weight:500;">Loading board...</div>
+</div>
+
+<!-- Setup Overlay — shown only on very first run -->
+<div id="setupOverlay" style="
+  display:none;position:fixed;inset:0;z-index:99998;
+  background:rgba(0,0,0,0.6);
+  align-items:center;justify-content:center;
+">
+  <div style="
+    background:#fff;border-radius:16px;padding:36px;max-width:480px;width:90%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  ">
+    <div style="font-size:22px;font-weight:800;color:#FF5A00;font-style:italic;margin-bottom:16px;">talabat</div>
+    <div style="font-size:17px;font-weight:700;color:#1A1816;margin-bottom:10px;">✅ Database Created!</div>
+    <p style="font-size:13px;color:#58554F;line-height:1.7;margin-bottom:20px;">
+      A file called <strong>updates-board-v2.html</strong> was just downloaded to your computer.<br><br>
+      <strong>Do this one time only:</strong><br>
+      1. Go to your GitHub repo<br>
+      2. Upload the downloaded file (replace the old one)<br>
+      3. Share the GitHub Pages link with your team<br><br>
+      Everyone will now see the same live board! 🎉
+    </p>
+    <button onclick="document.getElementById('setupOverlay').style.display='none';loadData();" style="
+      width:100%;padding:12px;border-radius:8px;
+      background:#FF5A00;color:#fff;border:none;
+      font-size:14px;font-weight:600;cursor:pointer;
+    ">Got it — Continue to Board</button>
+  </div>
 </div>
 <div id="savingBadge" style="
   position:fixed;bottom:16px;right:16px;z-index:9997;
@@ -438,15 +466,11 @@ Object.keys(GIFS).forEach(function(k){
   if(el) el.src=GIFS[k];
 });
 
-// ─────────────────────────────────────────────
-//  CONFIGURATION — fill these before uploading
-// ─────────────────────────────────────────────
-const CONFIG = {
-  // Get a free API key from https://jsonbin.io → Sign up → API Keys
-  JSONBIN_KEY: '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i',
-  // After first save, paste your Bin ID here (e.g. '6123abc...')
-  BIN_ID: 'YOUR_BIN_ID',
-};
+// ── Firebase config (free shared backend) ──
+const API_KEY = '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i';
+const API     = 'https://api.jsonbin.io/v3';
+// DATA_BIN is set below — DO NOT EDIT MANUALLY
+let   DATA_BIN = '6aa46945ffd5d16053fbc5e5';
 
 // ── STATE ──
 const DEF_CATS=[
@@ -470,46 +494,64 @@ let addCatOpen= false;
 let isSaving  = false;
 let saveTimer  = null;
 
-// ── JSONBIN API ──
-const API = 'https://api.jsonbin.io/v3';
+// ── Firebase API ──
+
 
 async function loadData() {
   showLoader(true);
-  // Auto-persist BIN_ID in localStorage — no manual editing needed
-  let storedBinId = localStorage.getItem('tlb_bin_id');
-  if (storedBinId) CONFIG.BIN_ID = storedBinId;
 
-  try {
-    if (!CONFIG.BIN_ID || CONFIG.BIN_ID === 'YOUR_BIN_ID') {
-      // First ever open — create the shared bin automatically
-      const res = await fetch(`${API}/b`, {
+  // ── SELF SETUP: if no bin yet, create one and patch the file ──
+  if (DATA_BIN === 'SETUP_REQUIRED') {
+    try {
+      document.getElementById('loaderMsg').textContent = 'Creating shared database...';
+      const r = await fetch(`${API}/b`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': CONFIG.JSONBIN_KEY,
+          'X-Master-Key': API_KEY,
           'X-Bin-Name': 'FinalCheckBoard',
           'X-Bin-Private': 'false',
         },
-        body: JSON.stringify({ updates:[], links:[], cats: DEF_CATS }),
+        body: JSON.stringify({ updates:[], links:[], cats: DEF_CATS })
       });
-      const data = await res.json();
-      CONFIG.BIN_ID = data.metadata.id;
-      localStorage.setItem('tlb_bin_id', CONFIG.BIN_ID);
-      updates = []; links = []; cats = JSON.parse(JSON.stringify(DEF_CATS));
-      toast('✅ Board ready! Share the GitHub link with your team.');
-    } else {
-      const res = await fetch(`${API}/b/${CONFIG.BIN_ID}/latest`, {
-        headers: { 'X-Master-Key': CONFIG.JSONBIN_KEY },
-      });
-      const data = await res.json();
-      const record = data.record || {};
-      updates = record.updates || [];
-      links   = record.links   || [];
-      cats    = (record.cats && record.cats.length) ? record.cats : JSON.parse(JSON.stringify(DEF_CATS));
+      const d = await r.json();
+      DATA_BIN = d.metadata.id;
+
+      // Patch this very HTML file with the new bin ID and trigger download
+      document.getElementById('loaderMsg').textContent = 'Generating your file...';
+      const htmlRes  = await fetch(window.location.href);
+      let   htmlText = await htmlRes.text();
+      htmlText = htmlText.replace("let   DATA_BIN = 'SETUP_REQUIRED';",
+                                  `let   DATA_BIN = '${DATA_BIN}';`);
+      const blob = new Blob([htmlText], {type:'text/html'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'updates-board-v2.html'; a.click();
+      URL.revokeObjectURL(url);
+
+      showLoader(false);
+      // Show overlay instructions
+      document.getElementById('setupOverlay').style.display = 'flex';
+      return;
+    } catch(e) {
+      console.error(e);
+      toast('⚠ Setup failed — check your internet connection.');
+      showLoader(false);
+      return;
     }
+  }
+
+  // ── NORMAL LOAD ──
+  try {
+    const res  = await fetch(`${API}/b/${DATA_BIN}/latest`, {
+      headers: { 'X-Master-Key': API_KEY }
+    });
+    const json = await res.json();
+    const d    = json.record || {};
+    updates = d.updates || [];
+    links   = d.links   || [];
+    cats    = (d.cats && d.cats.length) ? d.cats : JSON.parse(JSON.stringify(DEF_CATS));
   } catch(e) {
-    console.error('Load error:', e);
-    // Fallback to localStorage if offline
     updates = JSON.parse(localStorage.getItem('tlb3_u')||'[]');
     links   = JSON.parse(localStorage.getItem('tlb3_l')||'[]');
     cats    = JSON.parse(localStorage.getItem('tlb3_c')||JSON.stringify(DEF_CATS));
@@ -520,22 +562,16 @@ async function loadData() {
 }
 
 async function saveData() {
-  // Always backup locally
   localStorage.setItem('tlb3_u', JSON.stringify(updates));
   localStorage.setItem('tlb3_l', JSON.stringify(links));
   localStorage.setItem('tlb3_c', JSON.stringify(cats));
-
-  if (!CONFIG.BIN_ID || CONFIG.BIN_ID === 'YOUR_BIN_ID') return;
   if (isSaving) return;
   isSaving = true;
   showSaving(true);
   try {
-    await fetch(`${API}/b/${CONFIG.BIN_ID}`, {
+    await fetch(`${API}/b/${DATA_BIN}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': CONFIG.JSONBIN_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
       body: JSON.stringify({ updates, links, cats }),
     });
   } catch(e) {
@@ -562,17 +598,7 @@ function showSaving(on) {
 // ── INIT ──
 function init(){
   if(localStorage.getItem('tlb3_dark')==='1') applyDark(true);
-  if (!CONFIG.JSONBIN_KEY || CONFIG.JSONBIN_KEY === 'YOUR_JSONBIN_API_KEY') {
-    // Offline mode — use localStorage
-    updates = JSON.parse(localStorage.getItem('tlb3_u')||'[]');
-    links   = JSON.parse(localStorage.getItem('tlb3_l')||'[]');
-    cats    = JSON.parse(localStorage.getItem('tlb3_c')||JSON.stringify(DEF_CATS));
-    showLoader(false);
-    buildCatSel(); buildSidebar(); buildTabs(); renderFeed(); renderLinks();
-    toast('⚠ Running offline — configure JSONBin for shared data');
-  } else {
-    loadData();
-  }
+  loadData();
   setupDrop('dropZone','fileIn','imgPrev',pendImgs);
 }
 
