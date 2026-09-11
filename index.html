@@ -390,7 +390,7 @@ body{font-size:14px;line-height:1.45;}
       </div>
       <div class="fgap">
         <label class="flabel">Your Name <span style="color:var(--orange)">*</span></label>
-        <input type="text" class="finp" id="nameIn" placeholder="Your name">
+        <input type="text" class="finp" id="nameIn" placeholder="Your name" autocomplete="name" required>
       </div>
       <button class="add-btn" onclick="addUpdate()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -689,7 +689,7 @@ function renderFeed(){
 function makeCard(u){
   const cat=cats.find(c=>c.id===u.catId)||cats[0];
   const d=new Date(u.ts);
-  const ds=d.getDate()+' '+d.toLocaleString('en',{month:'short'})+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const ds=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
   const el=document.createElement('div');
   el.className='card'; el.dataset.id=u.id;
   el.innerHTML=`
@@ -741,7 +741,7 @@ function addUpdate(){
   const catId=document.getElementById('catSel').value;
   const name=document.getElementById('nameIn').value.trim();
   if(!raw){toast('Write something first');return;}
-  if(!name){toast('Enter your name');return;}
+  if(!name){document.getElementById('nameIn').focus();toast('Please enter your name before adding the update');return;}
   raw.split(/\s*====\s*/).map(s=>s.trim()).filter(Boolean).forEach(msg=>{
     updates.push({id:uid(),ts:Date.now(),msg,catId,name,imgs:[...pendImgs],pinned:false});
   });
@@ -1025,7 +1025,7 @@ function exportPDF(){
     list.forEach(u=>{
       const cat=cats.find(c=>c.id===u.catId)||cats[0];
       const d=new Date(u.ts);
-      const ds=d.getDate()+' '+d.toLocaleString('en',{month:'short'})+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      const ds=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
       win.document.write(`<div class="card">
         <div class="card-hd">
           <span class="badge" style="background:${cat.bg};color:${cat.tx}">
@@ -1085,7 +1085,7 @@ function exportDOC(){
   list.forEach(u=>{
     const cat=cats.find(c=>c.id===u.catId)||cats[0];
     const d=new Date(u.ts);
-    const ds=d.getDate()+' '+d.toLocaleString('en',{month:'short'})+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    const ds=d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
     body+=`<div class="card">
       <span class="cat-badge" style="background:${cat.bg};color:${cat.tx};">${escRaw(cat.name)}</span>
       ${u.pinned?' &nbsp; <b style="color:#FF5A00;font-size:9pt;">📌 Pinned</b>':''}
