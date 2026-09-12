@@ -82,7 +82,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 /* Form */
 .form-body{padding:0 12px;}
 .flabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);display:block;margin-bottom:3px;}
-.fta{width:100%;min-height:150px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;font-size:12px;padding:9px;outline:none;resize:vertical;transition:border-color 0.15s;}
+.fta{width:100%;min-height:150px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;font-size:14px;padding:9px;outline:none;resize:vertical;transition:border-color 0.15s;white-space:pre-wrap;overflow:auto;}
+.fta:empty::before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;}
 .fta:focus{border-color:var(--orange);}
 .fsel{width:100%;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;font-size:12px;padding:6px 9px;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer;}
 .fsel:focus{border-color:var(--orange);outline:none;}
@@ -438,7 +439,7 @@ body{font-size:15px;line-height:1.5;}
         <select onchange="formatSelectionStyle('msgIn','font',this.value);this.selectedIndex=0" title="Font family" aria-label="Font family"><option value="">Font</option><option value="Inter">Inter</option><option value="Georgia">Georgia</option><option value="Trebuchet MS">Trebuchet</option><option value="Courier New">Courier</option><option value="Arial Black">Arial Black</option></select>
         <select onchange="formatSelectionStyle('msgIn','size',this.value);this.selectedIndex=0" title="Text size" aria-label="Text size"><option value="">Size</option><option value="12">Small</option><option value="14">Normal</option><option value="18">Large</option><option value="24">Title</option></select>
       </div>
-      <textarea class="fta" id="msgIn" rows="7" placeholder="Paste one message, or a batch separated by ==== lines..."></textarea>
+      <div class="fta" id="msgIn" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Paste one message, or a batch separated by ==== lines..."></div>
       <div class="fgap">
         <label class="flabel">Category</label>
         <select class="fsel" id="catSel"></select>
@@ -821,7 +822,7 @@ function makeCard(u){
         <select onchange="formatSelectionStyle('etxt-${u.id}','font',this.value);this.selectedIndex=0" title="Font family" aria-label="Font family"><option value="">Font</option><option value="Inter">Inter</option><option value="Georgia">Georgia</option><option value="Trebuchet MS">Trebuchet</option><option value="Courier New">Courier</option><option value="Arial Black">Arial Black</option></select>
         <select onchange="formatSelectionStyle('etxt-${u.id}','size',this.value);this.selectedIndex=0" title="Text size" aria-label="Text size"><option value="">Size</option><option value="12">Small</option><option value="14">Normal</option><option value="18">Large</option><option value="24">Title</option></select>
       </div>
-      <textarea rows="7" id="etxt-${u.id}">${esc(u.msg)}</textarea>
+      <div class="fta" contenteditable="true" role="textbox" aria-multiline="true" id="etxt-${u.id}">${formatText(u.msg)}</div>
       <div class="edit-drop" onclick="document.getElementById('efileIn-${u.id}').click()">
         <input type="file" id="efileIn-${u.id}" accept="image/*" multiple onchange="handleFiles(event,'eprev-${u.id}',null,'${u.id}')">
         📸 Click or drag to add/replace screenshots
@@ -857,16 +858,19 @@ async function addUpdate(){
     toast('Preparing screenshot(s)…');
     await new Promise(resolve=>imageReadWaiters.push(resolve));
   }
-  const raw=document.getElementById('msgIn').value.trim();
+  const editor=document.getElementById('msgIn');
+  const raw=editor.innerText.trim();
+  const html=cleanRichHtml(editor.innerHTML);
   const catId=document.getElementById('catSel').value;
   const name=document.getElementById('nameIn').value.trim();
   if(!raw){toast('Write something first');return;}
   if(!name){document.getElementById('nameIn').focus();toast('Please enter your name before adding the update');return;}
-  raw.split(/\s*====\s*/).map(s=>s.trim()).filter(Boolean).forEach(msg=>{
-    updates.push({id:uid(),ts:Date.now(),msg,catId,name,imgs:[...pendImgs],pinned:false});
+  const parts=html.split(/\s*====\s*/).map(s=>s.trim()).filter(Boolean);
+  parts.forEach(part=>{
+    updates.push({id:uid(),ts:Date.now(),msg:part,catId,name,imgs:[...pendImgs],pinned:false});
   });
   save();
-  document.getElementById('msgIn').value='';
+  editor.innerHTML='';
   pendImgs=[];
   document.getElementById('imgPrev').innerHTML='';
   buildMemberFilter(); renderFeed();
@@ -885,7 +889,8 @@ function cancelEdit(id){
   if(u) u._editImgs=null;
 }
 function saveEdit(id){
-  const v=document.getElementById('etxt-'+id).value.trim();
+  const editor=document.getElementById('etxt-'+id);
+  const v=cleanRichHtml(editor.innerHTML).trim();
   if(!v)return;
   const u=updates.find(x=>x.id===id);
   if(!u)return;
@@ -1298,18 +1303,49 @@ function exportDOC(){
 
 function formatSelection(id,kind){
   const el=document.getElementById(id); if(!el)return;
-  const marks={bold:['**','**'],italic:['_','_'],underline:['__','__']}[kind];
-  const start=el.selectionStart,end=el.selectionEnd,text=el.value.slice(start,end)||'text';
-  el.setRangeText(marks[0]+text+marks[1],start,end,'select'); el.focus();
+  restoreEditorSelection(el);
+  el.focus();
+  document.execCommand(kind==='bold'?'bold':kind==='italic'?'italic':'underline',false,null);
 }
 function formatSelectionStyle(id,kind,value){
   const el=document.getElementById(id); if(!el||!value)return;
-  const start=el.selectionStart,end=el.selectionEnd,text=el.value.slice(start,end)||'text';
-  const safe=value.replace(/[^a-zA-Z0-9 ,'-]/g,'');
-  const tag=kind==='font'?`{{font:${safe}}}`:`{{size:${safe}}}`;
-  el.setRangeText(tag+text+`{{/${kind}}}`,start,end,'select'); el.focus();
+  restoreEditorSelection(el);
+  el.focus();
+  if(kind==='font') document.execCommand('fontName',false,value);
+  else { const map={12:'2',14:'3',18:'5',24:'7'}; document.execCommand('fontSize',false,map[value]||'3'); }
+}
+let savedEditorRange=null;
+document.addEventListener('selectionchange',()=>{
+  const sel=window.getSelection(); if(!sel.rangeCount)return;
+  const node=sel.anchorNode?.parentElement?.closest?.('[contenteditable="true"]');
+  if(node) savedEditorRange=sel.getRangeAt(0).cloneRange();
+});
+function restoreEditorSelection(editor){
+  if(!savedEditorRange)return;
+  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedEditorRange);
+  if(!editor.contains(sel.anchorNode))editor.focus();
+}
+function cleanRichHtml(html){
+  const box=document.createElement('div'); box.innerHTML=html||'';
+  box.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(n=>n.remove());
+  box.querySelectorAll('*').forEach(n=>{
+    [...n.attributes].forEach(a=>{if(a.name.toLowerCase().startsWith('on')||a.name.toLowerCase()==='href'||a.name.toLowerCase()==='src')n.removeAttribute(a.name);});
+    if(n.tagName==='FONT'){
+      const span=document.createElement('span');
+      if(n.getAttribute('face'))span.style.fontFamily=n.getAttribute('face');
+      const sizes={1:'12px',2:'12px',3:'14px',4:'16px',5:'18px',6:'20px',7:'24px'};
+      if(n.getAttribute('size'))span.style.fontSize=sizes[n.getAttribute('size')]||'14px';
+      span.innerHTML=n.innerHTML;n.replaceWith(span);n=span;
+    }
+    if(n.hasAttribute('style')){
+      const allowed=['font-family','font-size','font-weight','font-style','text-decoration'];
+      n.setAttribute('style',[...n.style].filter(p=>allowed.includes(p)).map(p=>`${p}:${n.style.getPropertyValue(p)}`).join(';'));
+    }
+  });
+  return box.innerHTML;
 }
 function formatText(value){
+  if(/<[^>]+>/.test(String(value||''))) return cleanRichHtml(value);
   let s=esc(String(value||''));
   s=s.replace(/\{\{font:([^}]+)\}\}([\s\S]*?)\{\{\/font\}\}/g,'<span style="font-family:$1">$2</span>');
   s=s.replace(/\{\{size:(12|14|18|24)\}\}([\s\S]*?)\{\{\/size\}\}/g,'<span style="font-size:$1px">$2</span>');
