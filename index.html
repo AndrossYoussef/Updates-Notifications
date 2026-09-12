@@ -1038,7 +1038,7 @@ function notifyNewUpdate(u){
   n.onclick=()=>{window.focus();n.close();};
 }
 function doRefresh(){loadData();toast('Refreshed');}
-// Sync once per hour automatically; the Refresh button remains available for immediate updates.
+// Sync every 15 seconds automatically; the Refresh button remains available for immediate updates.
 function userIsEditing(){
   const el=document.activeElement;
   if(!el)return false;
@@ -1047,7 +1047,7 @@ function userIsEditing(){
 }
 setInterval(()=>{
   if(!document.hidden && !isSaving && !userIsEditing()) loadData();
-}, 3600000);
+}, 15000);
 
 function fillTimeSelects(){
   const pad=n=>String(n).padStart(2,'0');
