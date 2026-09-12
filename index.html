@@ -176,7 +176,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .card-img:hover{opacity:0.8;}
 .rich-toolbar{display:flex;gap:4px;margin:5px 0 0;}
 .rich-toolbar button{min-width:28px;padding:4px 8px;border:1px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text);font:600 13px Georgia,serif;cursor:pointer;}
-.rich-toolbar button:hover{border-color:var(--orange);color:var(--orange);}
+.rich-toolbar button:hover,.rich-toolbar select:focus{border-color:var(--orange);color:var(--orange);}
+.rich-toolbar select{border:1px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text);font:12px Inter,sans-serif;padding:4px 5px;cursor:pointer;}
 .filter-row{display:flex;gap:7px;flex-wrap:wrap;}
 .filter-select,.filter-date{border:1px solid var(--border);border-radius:99px;background:var(--bg);color:var(--text);font:inherit;font-size:12px;padding:7px 10px;outline:none;}
 .filter-select:focus,.filter-date:focus{border-color:var(--orange);}
@@ -416,6 +417,8 @@ body{font-size:15px;line-height:1.5;}
         <button type="button" onclick="formatSelection('msgIn','bold')" title="Bold"><b>B</b></button>
         <button type="button" onclick="formatSelection('msgIn','italic')" title="Italic"><i>I</i></button>
         <button type="button" onclick="formatSelection('msgIn','underline')" title="Underline"><u>U</u></button>
+        <select onchange="formatSelectionStyle('msgIn','font',this.value);this.selectedIndex=0" title="Font family" aria-label="Font family"><option value="">Font</option><option value="Inter">Inter</option><option value="Georgia">Georgia</option><option value="Trebuchet MS">Trebuchet</option><option value="Courier New">Courier</option><option value="Arial Black">Arial Black</option></select>
+        <select onchange="formatSelectionStyle('msgIn','size',this.value);this.selectedIndex=0" title="Text size" aria-label="Text size"><option value="">Size</option><option value="12">Small</option><option value="14">Normal</option><option value="18">Large</option><option value="24">Title</option></select>
       </div>
       <textarea class="fta" id="msgIn" rows="7" placeholder="Paste one message, or a batch separated by ==== lines..."></textarea>
       <div class="fgap">
@@ -797,6 +800,8 @@ function makeCard(u){
         <button type="button" onclick="formatSelection('etxt-${u.id}','bold')" title="Bold"><b>B</b></button>
         <button type="button" onclick="formatSelection('etxt-${u.id}','italic')" title="Italic"><i>I</i></button>
         <button type="button" onclick="formatSelection('etxt-${u.id}','underline')" title="Underline"><u>U</u></button>
+        <select onchange="formatSelectionStyle('etxt-${u.id}','font',this.value);this.selectedIndex=0" title="Font family" aria-label="Font family"><option value="">Font</option><option value="Inter">Inter</option><option value="Georgia">Georgia</option><option value="Trebuchet MS">Trebuchet</option><option value="Courier New">Courier</option><option value="Arial Black">Arial Black</option></select>
+        <select onchange="formatSelectionStyle('etxt-${u.id}','size',this.value);this.selectedIndex=0" title="Text size" aria-label="Text size"><option value="">Size</option><option value="12">Small</option><option value="14">Normal</option><option value="18">Large</option><option value="24">Title</option></select>
       </div>
       <textarea rows="7" id="etxt-${u.id}">${esc(u.msg)}</textarea>
       <div class="edit-drop" onclick="document.getElementById('efileIn-${u.id}').click()">
@@ -1279,8 +1284,17 @@ function formatSelection(id,kind){
   const start=el.selectionStart,end=el.selectionEnd,text=el.value.slice(start,end)||'text';
   el.setRangeText(marks[0]+text+marks[1],start,end,'select'); el.focus();
 }
+function formatSelectionStyle(id,kind,value){
+  const el=document.getElementById(id); if(!el||!value)return;
+  const start=el.selectionStart,end=el.selectionEnd,text=el.value.slice(start,end)||'text';
+  const safe=value.replace(/[^a-zA-Z0-9 ,'-]/g,'');
+  const tag=kind==='font'?`{{font:${safe}}}`:`{{size:${safe}}}`;
+  el.setRangeText(tag+text+`{{/${kind}}}`,start,end,'select'); el.focus();
+}
 function formatText(value){
   let s=esc(String(value||''));
+  s=s.replace(/\{\{font:([^}]+)\}\}([\s\S]*?)\{\{\/font\}\}/g,'<span style="font-family:$1">$2</span>');
+  s=s.replace(/\{\{size:(12|14|18|24)\}\}([\s\S]*?)\{\{\/size\}\}/g,'<span style="font-size:$1px">$2</span>');
   s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
   s=s.replace(/_([^_\n]+)_/g,'<em>$1</em>');
   s=s.replace(/__([^_\n]+)__/g,'<u>$1</u>');
