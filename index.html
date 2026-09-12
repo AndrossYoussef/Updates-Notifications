@@ -263,7 +263,6 @@ body{font-size:15px;line-height:1.5;}
   .time-calc-card{padding:16px;}
   .time-calc-grid{grid-template-columns:1fr;}
   .filter-row{width:100%;}.filter-select,.filter-date{flex:1;min-width:0;}
-  .dashboard-hero{padding:18px 10px 15px;}.stats-bar{gap:6px;}.stat-pill{min-width:calc(50% - 6px);padding:5px 8px;}
 }
 
 /* Scrollbar */
@@ -291,7 +290,6 @@ body{background:var(--bg);letter-spacing:.005em;}
 .fta,.fsel,.finp,.al-inp,.add-cat-inp,.search-inp,.filter-select,.filter-date{border-color:var(--border);background:#FFFDFC;}
 .fta:focus,.fsel:focus,.finp:focus,.al-inp:focus,.add-cat-inp:focus,.search-inp:focus,.filter-select:focus,.filter-date:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,90,0,.10);}
 .stats-bar,.search-bar,.cat-tabs{background:rgba(255,248,243,.88);border-bottom-color:var(--border);}
-.stats-bar{flex-wrap:wrap;}
 .stat-pill{background:#FFFDFC;border-color:var(--border);box-shadow:0 2px 8px rgba(100,49,27,.05);}.stat-num{color:#44251C;}
 .search-bar{padding-top:12px;padding-bottom:12px;}.search-inp{box-shadow:0 2px 8px rgba(100,49,27,.04);}
 .sort-btn{background:#FFFDFC;border-color:var(--border);}.sort-btn.active{background:#44251C;border-color:#44251C;color:#FFF8F3;}
@@ -304,14 +302,6 @@ body{background:var(--bg);letter-spacing:.005em;}
 .drop-zone,.edit-drop{background:#FFFAF7;border-color:#D9BDAE;}.drop-zone:hover,.drop-zone.over,.edit-drop:hover{background:var(--orange-bg);}
 .rich-toolbar button,.rich-toolbar select{background:#FFFDFC;border-color:var(--border);}
 .empty{color:#A98E83;}.empty svg{stroke:var(--orange);}
-.dashboard-hero{padding:22px 18px 18px;background:linear-gradient(135deg,#FFF8F3 0%,#FFE9DB 100%);border-bottom:1px solid var(--border);}
-.hero-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange2);margin-bottom:5px;}
-.hero-title{font-size:clamp(22px,3vw,30px);line-height:1.12;letter-spacing:-.035em;color:#44251C;font-weight:800;margin-bottom:6px;}
-.hero-copy{font-size:13px;color:var(--text2);max-width:650px;line-height:1.55;}
-.stat-pill{min-width:132px;justify-content:center;}
-.stat-label{font-size:11px;color:var(--text2);font-weight:600;}
-.screenshot-count{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 8px;border-radius:99px;background:var(--orange-bg);color:var(--orange2);font-size:10px;font-weight:700;}
-.card-txt strong{font-weight:800;}.card-txt em{font-family:Georgia,serif;}.card-txt u{text-decoration-thickness:1.5px;text-underline-offset:2px;}
 [data-dark]{--bg:#17110E;--surface:#241915;--surface2:#30201A;--border:#4B3127;--border2:#6A4536;--text:#FFF3EC;--text2:#D3B7AA;--text3:#9D7F72;--orange-bg:#3B1E12;--orange-mid:#6A3623;}
 </style>
 </head>
@@ -529,18 +519,10 @@ body{background:var(--bg);letter-spacing:.005em;}
 <!-- MAIN -->
 <main class="main">
 
-  <section class="dashboard-hero">
-    <div class="hero-kicker">Final Check · Shared Workspace</div>
-    <h1 class="hero-title">Team Updates Board</h1>
-    <p class="hero-copy">Keep decisions, reminders, and screenshots together in one clear place for the whole team.</p>
-  </section>
-
   <div class="stats-bar">
-    <div class="stat-pill"><span class="stat-num o" id="statTotal">0</span><span class="stat-label">Total Updates</span></div>
-    <div class="stat-pill"><span class="stat-num o" id="statPinned">0</span><span class="stat-label">Pinned</span></div>
-    <div class="stat-pill"><span class="stat-num" id="statCats">0</span><span class="stat-label">Categories</span></div>
-    <div class="stat-pill"><span class="stat-num" id="statMembers">0</span><span class="stat-label">Team Members</span></div>
-    <div class="stat-pill"><span class="stat-num" id="statScreenshots">0</span><span class="stat-label">Screenshots</span></div>
+    <div class="stat-pill"><span class="stat-num o" id="statTotal">0</span> Total Updates</div>
+    <div class="stat-pill"><span class="stat-num o" id="statPinned">0</span> Pinned</div>
+    <div class="stat-pill"><span class="stat-num" id="statCats">0</span> Categories</div>
   </div>
 
   <div class="search-bar">
@@ -800,8 +782,6 @@ function buildSidebar(){
   document.getElementById('statTotal').textContent=updates.length;
   document.getElementById('statPinned').textContent=updates.filter(u=>u.pinned).length;
   document.getElementById('statCats').textContent=cats.length;
-  document.getElementById('statMembers').textContent=new Set(updates.map(u=>u.name).filter(Boolean)).size;
-  document.getElementById('statScreenshots').textContent=updates.reduce((n,u)=>n+(u.imgs||[]).length,0);
 }
 
 function buildTabs(){
@@ -843,7 +823,6 @@ function makeCard(u){
         <span style="width:5px;height:5px;border-radius:50%;background:${cat.color};display:inline-block"></span>
         ${esc(cat.name)}
       </span>
-      ${(u.imgs&&u.imgs.length)?`<span class="screenshot-count" title="${u.imgs.length} screenshot${u.imgs.length===1?'':'s'}">▧ ${u.imgs.length}</span>`:''}
       <button class="pin-btn ${u.pinned?'on':''}" onclick="togglePin('${u.id}')" title="${u.pinned?'Unpin':'Pin'}">${u.pinned?'📌':'📍'}</button>
     </div>
     <div class="card-body">
