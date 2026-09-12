@@ -1295,9 +1295,9 @@ function formatText(value){
   let s=esc(String(value||''));
   s=s.replace(/\{\{font:([^}]+)\}\}([\s\S]*?)\{\{\/font\}\}/g,'<span style="font-family:$1">$2</span>');
   s=s.replace(/\{\{size:(12|14|18|24)\}\}([\s\S]*?)\{\{\/size\}\}/g,'<span style="font-size:$1px">$2</span>');
+  s=s.replace(/__([^_\n]+)__/g,'<u>$1</u>');
   s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
   s=s.replace(/_([^_\n]+)_/g,'<em>$1</em>');
-  s=s.replace(/__([^_\n]+)__/g,'<u>$1</u>');
   return s;
 }
 function escRaw(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
