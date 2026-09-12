@@ -46,6 +46,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .topbar-btns{display:flex;gap:6px;}
 .top-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:background 0.15s;}
 .top-btn:hover{background:rgba(255,255,255,0.22);}
+.top-icon{width:14px;height:14px;display:inline-block;flex:none;transition:transform .2s ease;}
+.top-btn:hover .top-icon{transform:scale(1.14) rotate(-4deg);}
+.top-btn:hover .refresh-icon{transform:scale(1.14) rotate(35deg);}
 
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 50px);}
@@ -320,20 +323,20 @@ body{font-size:15px;line-height:1.5;}
   </div>
   <div class="topbar-btns">
     <button class="top-btn" onclick="toggleDark()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
       <span id="darkLabel">Dark</span>
     </button>
     <button class="top-btn" onclick="doRefresh()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.22-6.5"/></svg>
+      <svg class="top-icon refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-14.8-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8.1 8.1 0 0 0 14.8 3L21 13"/><path d="M21 20v-7h-7"/></svg>
       Refresh
     </button>
     <button class="top-btn" onclick="enableNotifications()" id="notifyBtn" title="Enable notifications">
-      <span id="notifyIcon">🔔</span><span id="notifyLabel">Notify me</span>
+      <span id="notifyIcon"><svg class="top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></svg></span><span id="notifyLabel">Notify me</span>
     </button>
-    <button class="top-btn" onclick="openTimeCalculator()" title="Calculate working time">⏱ Time</button>
+    <button class="top-btn" onclick="openTimeCalculator()" title="Calculate working time"><svg class="top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/><path d="M9 2h6"/></svg> Time</button>
     <div style="position:relative;">
       <button class="top-btn" onclick="toggleExportMenu()" id="exportBtn">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <svg class="top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/><path d="M4 4h4M16 4h4"/></svg>
         Export
       </button>
       <div id="exportMenu" style="
@@ -1120,11 +1123,12 @@ function updateNotificationButton(){
   const btn=document.getElementById('notifyBtn');
   const label=document.getElementById('notifyLabel');
   const icon=document.getElementById('notifyIcon');
+  const bell=on=>`<svg class="top-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/>${on?'<path d="m9 12 2 2 4-4"/>':''}</svg>`;
   if(!btn)return;
-  if(!('Notification' in window)){label.textContent='Not supported';icon.textContent='🔕';return;}
-  if(Notification.permission==='granted'){label.textContent='Notifications on';icon.textContent='🔔';btn.style.background='rgba(255,255,255,0.25)';}
-  else if(Notification.permission==='denied'){label.textContent='Notifications blocked';icon.textContent='🔕';}
-  else {label.textContent='Notify me';icon.textContent='🔔';}
+  if(!('Notification' in window)){label.textContent='Not supported';icon.innerHTML=bell(false);return;}
+  if(Notification.permission==='granted'){label.textContent='Notifications on';icon.innerHTML=bell(true);btn.style.background='rgba(255,255,255,0.25)';}
+  else if(Notification.permission==='denied'){label.textContent='Notifications blocked';icon.innerHTML=bell(false);}
+  else {label.textContent='Notify me';icon.innerHTML=bell(false);}
 }
 async function enableNotifications(){
   if(!('Notification' in window)){toast('Browser notifications are not supported here.');return;}
