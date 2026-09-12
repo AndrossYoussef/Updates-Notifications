@@ -561,6 +561,7 @@ let saveTimer  = null;
 let notificationsReady = false;
 let knownUpdateIds = new Set();
 let notificationsInitialized = false;
+let saveQueued = false;
 
 // ── Firebase API ──
 
@@ -640,20 +641,29 @@ async function saveData() {
   localStorage.setItem('tlb3_u', JSON.stringify(updates));
   localStorage.setItem('tlb3_l', JSON.stringify(links));
   localStorage.setItem('tlb3_c', JSON.stringify(cats));
-  if (isSaving) return;
+  if (isSaving) { saveQueued = true; return; }
   isSaving = true;
   showSaving(true);
   try {
-    const res = await fetch(`${API}/b/${DATA_BIN}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
-      body: JSON.stringify({ updates, links, cats }),
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(()=> '');
-      console.error('Shared save rejected', res.status, detail);
-      toast(`⚠ Shared save rejected (${res.status}) — image may be too large.`);
-    }
+    do {
+      saveQueued = false;
+      const payload = JSON.stringify({ updates, links, cats });
+      if (payload.length > 98000) {
+        toast('⚠ Board is full. Use fewer or smaller screenshots.');
+        console.error('Shared save skipped: payload is', payload.length, 'characters');
+        break;
+      }
+      const res = await fetch(`${API}/b/${DATA_BIN}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+        body: payload,
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(()=> '');
+        console.error('Shared save rejected', res.status, detail);
+        toast(`⚠ Shared save rejected (${res.status}). Try a smaller image.`);
+      }
+    } while (saveQueued);
   } catch(e) {
     console.error(e);
     toast('⚠ Shared save failed — saved locally as backup.');
@@ -851,7 +861,7 @@ function compressImage(file){
       const img=new Image();
       img.onerror=reject;
       img.onload=()=>{
-        const max=1000;
+        const max=900;
         const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
         const canvas=document.createElement('canvas');
         canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
@@ -859,7 +869,8 @@ function compressImage(file){
         const ctx=canvas.getContext('2d',{alpha:false});
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
         let quality=0.68, out=canvas.toDataURL('image/jpeg',quality);
-        while(out.length>65000 && quality>0.38){ quality-=0.08; out=canvas.toDataURL('image/jpeg',quality); }
+        while(out.length>18000 && quality>0.30){ quality-=0.07; out=canvas.toDataURL('image/jpeg',quality); }
+        if(out.length > 18000) out=canvas.toDataURL('image/jpeg',0.22);
         resolve(out);
       };
       img.src=ev.target.result;
