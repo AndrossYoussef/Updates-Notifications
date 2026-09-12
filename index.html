@@ -1339,7 +1339,12 @@ function escRaw(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 // ── LIGHTBOX ──
 function openLB(src){document.getElementById('lbImg').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLB(){document.getElementById('lightbox').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLB();});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  closeLB();
+  const calc=document.getElementById('timeCalculator');
+  if(calc?.classList.contains('open')) closeTimeCalculator();
+});
 
 // ── UTILS ──
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36);}
