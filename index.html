@@ -32,7 +32,7 @@
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;display:flex;flex-direction:column;}
 
 /* ── TOPBAR ── */
-.topbar{height:50px;background:linear-gradient(115deg,#FF5A00,#FF6A00,#F45112,#FF5A00);background-size:260% 260%;animation:headerGlow 14s ease-in-out infinite;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;position:relative;overflow:hidden;}
+.topbar{height:50px;background:linear-gradient(115deg,#FF5A00,#FF6A00,#F45112,#FF5A00);background-size:260% 260%;animation:headerGlow 14s ease-in-out infinite;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0;position:relative;overflow:visible;}
 @keyframes headerGlow{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
 .topbar::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% -80%,rgba(255,255,255,.22),transparent 55%);opacity:.65;}
 .topbar>*{position:relative;z-index:1;}
@@ -233,6 +233,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 [data-dark] .time-calc-input{background:var(--bg);border-color:var(--border2);color:var(--text);}
 [data-dark] .time-calc-result{background:var(--orange-bg);border-color:var(--orange-mid);}
 [data-dark] #exportMenu{background:var(--surface)!important;border-color:var(--border)!important;}
+[data-dark] #exportMenu button{color:var(--text)!important;}
+[data-dark] #exportMenu>div{background:var(--border)!important;}
+#exportMenu{min-width:190px!important;}
+#exportMenu button{white-space:nowrap;}
 
 /* Edit panel */
 .edit-panel{display:none;padding:0 13px 12px;border-top:1px solid var(--border);background:var(--surface2);}
@@ -1218,6 +1222,7 @@ function exportPDF(){
   if(sortDir==='newest') list=[...list].reverse();
 
   const win=window.open('','_blank');
+  if(!win){toast('Please allow pop-ups for exports, then try again.');return;}
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Final Check — Updates Board</title>
   <style>
