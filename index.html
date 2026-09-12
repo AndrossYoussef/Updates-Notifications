@@ -46,9 +46,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 .topbar-btns{display:flex;gap:6px;}
 .top-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:background 0.15s;}
 .top-btn:hover{background:rgba(255,255,255,0.22);}
-.top-icon{width:14px;height:14px;display:inline-block;flex:none;transition:transform .2s ease;}
-.top-btn:hover .top-icon{transform:scale(1.14) rotate(-4deg);}
-.top-btn:hover .refresh-icon{transform:scale(1.14) rotate(35deg);}
+.top-icon{width:17px;height:17px;display:inline-block;flex:none;stroke-width:2.25;filter:drop-shadow(0 1px 2px rgba(80,20,0,.25));transition:transform .2s ease,filter .2s ease;}
+.top-btn{gap:7px;}
+.top-btn:hover .top-icon{transform:scale(1.18) rotate(-4deg);filter:drop-shadow(0 0 5px rgba(255,245,220,.7));}
+.top-btn:hover .refresh-icon{transform:scale(1.18) rotate(70deg);}
+#notifyIcon{display:inline-flex;align-items:center;position:relative;}
+#notifyIcon::after{content:'';position:absolute;right:-2px;top:0;width:5px;height:5px;border-radius:50%;background:#FFE0B2;box-shadow:0 0 0 2px rgba(255,90,0,.55);animation:notifyPulse 2s ease-in-out infinite;}
+@keyframes notifyPulse{0%,100%{transform:scale(.7);opacity:.55;}50%{transform:scale(1.15);opacity:1;}}
 
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 50px);}
