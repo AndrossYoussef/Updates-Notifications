@@ -562,6 +562,8 @@ let notificationsReady = false;
 let knownUpdateIds = new Set();
 let notificationsInitialized = false;
 let saveQueued = false;
+let pendingImageReads = 0;
+let imageReadWaiters = [];
 
 // ── Firebase API ──
 
@@ -791,7 +793,11 @@ function makeCard(u){
 }
 
 // ── ADD ──
-function addUpdate(){
+async function addUpdate(){
+  if(pendingImageReads){
+    toast('Preparing screenshot(s)…');
+    await new Promise(resolve=>imageReadWaiters.push(resolve));
+  }
   const raw=document.getElementById('msgIn').value.trim();
   const catId=document.getElementById('catSel').value;
   const name=document.getElementById('nameIn').value.trim();
@@ -880,6 +886,7 @@ function compressImage(file){
 }
 function handleFiles(e, prevId, arr, editId){
   ;[...e.target.files].forEach(f=>{
+    pendingImageReads++;
     compressImage(f).then(src=>{
       if(editId){
         const u=updates.find(x=>x.id===editId);
@@ -906,7 +913,11 @@ function handleFiles(e, prevId, arr, editId){
           prev.appendChild(wrap);
         }
       }
-    }).catch(err=>{console.error(err);toast('⚠ Could not read this image.');});
+    }).catch(err=>{console.error(err);toast('⚠ Could not read this image.');})
+    .finally(()=>{
+      pendingImageReads--;
+      if(!pendingImageReads) imageReadWaiters.splice(0).forEach(resolve=>resolve());
+    });
   });
 }
 function removePendImg(idx,btn){pendImgs.splice(idx,1);btn.parentElement.remove();}
@@ -1037,7 +1048,10 @@ function notifyNewUpdate(u){
   });
   n.onclick=()=>{window.focus();n.close();};
 }
-function doRefresh(){loadData();toast('Refreshed');}
+function doRefresh(){
+  if(isSaving || pendingImageReads){toast('Please wait for the current save or image upload to finish.');return;}
+  loadData();toast('Refreshed');
+}
 // Manual sync only; use the Refresh button to load the latest shared updates.
 function userIsEditing(){
   const el=document.activeElement;
