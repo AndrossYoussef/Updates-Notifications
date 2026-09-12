@@ -532,7 +532,7 @@ Object.keys(GIFS).forEach(function(k){
 });
 
 // ── Firebase config (free shared backend) ──
-const API_KEY = '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i';
+const API_KEY = '';
 const API     = 'https://api.jsonbin.io/v3';
 const CLOUDINARY_CLOUD = 'ju7ccjac';
 const CLOUDINARY_PRESET = 'final_check_screenshots';
@@ -616,9 +616,7 @@ async function loadData() {
 
   // ── NORMAL LOAD ──
   try {
-    const res  = await fetch(`${API}/b/${DATA_BIN}/latest`, {
-      headers: { 'X-Master-Key': API_KEY }
-    });
+    const res  = await fetch(`${API}/b/${DATA_BIN}/latest`);
     const json = await res.json();
     const d    = json.record || {};
     const incomingUpdates = d.updates || [];
@@ -659,7 +657,7 @@ async function saveData() {
       }
       const res = await fetch(`${API}/b/${DATA_BIN}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: payload,
       });
       if (!res.ok) {
