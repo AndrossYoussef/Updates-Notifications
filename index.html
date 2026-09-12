@@ -534,6 +534,8 @@ Object.keys(GIFS).forEach(function(k){
 // ── Firebase config (free shared backend) ──
 const API_KEY = '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i';
 const API     = 'https://api.jsonbin.io/v3';
+const CLOUDINARY_CLOUD = 'ju7ccjac';
+const CLOUDINARY_PRESET = 'final_check_screenshots';
 // DATA_BIN is set below — DO NOT EDIT MANUALLY
 let   DATA_BIN = '6aa469e0ac6210605ac2321a';
 
@@ -867,7 +869,7 @@ function compressImage(file){
       const img=new Image();
       img.onerror=reject;
       img.onload=()=>{
-        const max=900;
+        const max=800;
         const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
         const canvas=document.createElement('canvas');
         canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));
@@ -875,8 +877,8 @@ function compressImage(file){
         const ctx=canvas.getContext('2d',{alpha:false});
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
         let quality=0.68, out=canvas.toDataURL('image/jpeg',quality);
-        while(out.length>18000 && quality>0.30){ quality-=0.07; out=canvas.toDataURL('image/jpeg',quality); }
-        if(out.length > 18000) out=canvas.toDataURL('image/jpeg',0.22);
+        while(out.length>9000 && quality>0.22){ quality-=0.07; out=canvas.toDataURL('image/jpeg',quality); }
+        if(out.length > 9000) out=canvas.toDataURL('image/jpeg',0.16);
         resolve(out);
       };
       img.src=ev.target.result;
@@ -884,10 +886,21 @@ function compressImage(file){
     r.readAsDataURL(file);
   });
 }
+async function uploadToCloudinary(dataUrl, filename){
+  const form=new FormData();
+  const blob=await (await fetch(dataUrl)).blob();
+  form.append('file',blob,filename||'screenshot.jpg');
+  form.append('upload_preset',CLOUDINARY_PRESET);
+  const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:form});
+  if(!res.ok) throw new Error(`Cloudinary upload failed (${res.status})`);
+  const data=await res.json();
+  if(!data.secure_url) throw new Error('Cloudinary did not return an image URL');
+  return data.secure_url;
+}
 function handleFiles(e, prevId, arr, editId){
   ;[...e.target.files].forEach(f=>{
     pendingImageReads++;
-    compressImage(f).then(src=>{
+    compressImage(f).then(dataUrl=>uploadToCloudinary(dataUrl,f.name)).then(src=>{
       if(editId){
         const u=updates.find(x=>x.id===editId);
         if(u){
