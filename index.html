@@ -1038,16 +1038,13 @@ function notifyNewUpdate(u){
   n.onclick=()=>{window.focus();n.close();};
 }
 function doRefresh(){loadData();toast('Refreshed');}
-// Sync every 15 seconds automatically; the Refresh button remains available for immediate updates.
+// Manual sync only; use the Refresh button to load the latest shared updates.
 function userIsEditing(){
   const el=document.activeElement;
   if(!el)return false;
   if(['INPUT','TEXTAREA','SELECT'].includes(el.tagName))return true;
   return false;
 }
-setInterval(()=>{
-  if(!document.hidden && !isSaving && !userIsEditing()) loadData();
-}, 15000);
 
 function fillTimeSelects(){
   const pad=n=>String(n).padStart(2,'0');
