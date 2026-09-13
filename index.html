@@ -617,12 +617,12 @@ Object.keys(GIFS).forEach(function(k){
 });
 
 // ── Firebase config (free shared backend) ──
-const API_KEY = '';
+const API_KEY = '$2a$10$FVEi3dmkZCdid08umTEGb.v/qbhKQg9TkQ7PiOZ8SvljvTRHSpk2i';
 const API     = 'https://api.jsonbin.io/v3';
 const CLOUDINARY_CLOUD = 'ju7ccjac';
 const CLOUDINARY_PRESET = 'final_check_screenshots';
 // DATA_BIN is set below — DO NOT EDIT MANUALLY
-let   DATA_BIN = '6aa469e0ac6210605ac2321a';
+let   DATA_BIN = '6aa6cba4ffd5d1605301deed';
 
 // ── STATE ──
 const DEF_CATS=[
@@ -715,9 +715,9 @@ async function loadData() {
     links   = d.links   || [];
     cats    = (d.cats && d.cats.length) ? d.cats : JSON.parse(JSON.stringify(DEF_CATS));
   } catch(e) {
-    updates = JSON.parse(localStorage.getItem('tlb3_u')||'[]');
-    links   = JSON.parse(localStorage.getItem('tlb3_l')||'[]');
-    cats    = JSON.parse(localStorage.getItem('tlb3_c')||JSON.stringify(DEF_CATS));
+    updates = JSON.parse(localStorage.getItem('finalcheck_u')||'[]');
+    links   = JSON.parse(localStorage.getItem('finalcheck_l')||'[]');
+    cats    = JSON.parse(localStorage.getItem('finalcheck_c')||JSON.stringify(DEF_CATS));
     toast('⚠ Offline mode — changes saved locally only.');
   }
   showLoader(false);
@@ -725,9 +725,9 @@ async function loadData() {
 }
 
 async function saveData() {
-  localStorage.setItem('tlb3_u', JSON.stringify(updates));
-  localStorage.setItem('tlb3_l', JSON.stringify(links));
-  localStorage.setItem('tlb3_c', JSON.stringify(cats));
+  localStorage.setItem('finalcheck_u', JSON.stringify(updates));
+  localStorage.setItem('finalcheck_l', JSON.stringify(links));
+  localStorage.setItem('finalcheck_c', JSON.stringify(cats));
   if (isSaving) { saveQueued = true; return; }
   isSaving = true;
   showSaving(true);
@@ -775,7 +775,7 @@ function showSaving(on) {
 
 // ── INIT ──
 function init(){
-  if(localStorage.getItem('tlb3_dark')==='1') applyDark(true);
+  if(localStorage.getItem('finalcheck_dark')==='1') applyDark(true);
   if('Notification' in window){ notificationsReady=Notification.permission==='granted'; updateNotificationButton(); }
   loadData();
   setupDrop('dropZone','fileIn','imgPrev',pendImgs);
@@ -1138,7 +1138,7 @@ function applyDark(on){
   if(on)document.documentElement.setAttribute('data-dark','');
   else document.documentElement.removeAttribute('data-dark');
   document.getElementById('darkLabel').textContent=on?'Light':'Dark';
-  localStorage.setItem('tlb3_dark',on?'1':'0');
+  localStorage.setItem('finalcheck_dark',on?'1':'0');
 }
 function toggleDark(){applyDark(!document.documentElement.hasAttribute('data-dark'));}
 
