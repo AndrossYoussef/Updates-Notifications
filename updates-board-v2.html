@@ -627,19 +627,16 @@ async function loadData() {
     links   = d.links   || [];
     cats    = (d.cats && d.cats.length) ? d.cats : JSON.parse(JSON.stringify(DEF_CATS));
   } catch(e) {
-    updates = JSON.parse(localStorage.getItem('finalcheck_u')||'[]');
-    links   = JSON.parse(localStorage.getItem('finalcheck_l')||'[]');
-    cats    = JSON.parse(localStorage.getItem('finalcheck_c')||JSON.stringify(DEF_CATS));
-    toast('⚠ Offline mode — changes saved locally only.');
+    updates = [];
+    links   = [];
+    cats    = JSON.parse(JSON.stringify(DEF_CATS));
+    toast('⚠ Remote database unavailable — this change was not saved.');
   }
   showLoader(false);
   buildCatSel(); buildSidebar(); buildTabs(); renderFeed(); renderLinks();
 }
 
 async function saveData() {
-  localStorage.setItem('finalcheck_u', JSON.stringify(updates));
-  localStorage.setItem('finalcheck_l', JSON.stringify(links));
-  localStorage.setItem('finalcheck_c', JSON.stringify(cats));
   if (isSaving) return;
   isSaving = true;
   showSaving(true);
@@ -656,7 +653,7 @@ async function saveData() {
     }
   } catch(e) {
     console.error(e);
-    toast('⚠ Shared save failed — saved locally as backup.');
+    toast('⚠ Shared save failed — check your connection and try again.');
   }
   isSaving = false;
   showSaving(false);
@@ -678,7 +675,6 @@ function showSaving(on) {
 
 // ── INIT ──
 function init(){
-  if(localStorage.getItem('finalcheck_dark')==='1') applyDark(true);
   if('Notification' in window){ notificationsReady=Notification.permission==='granted'; updateNotificationButton(); }
   loadData();
   setupDrop('dropZone','fileIn','imgPrev',pendImgs);
@@ -994,7 +990,6 @@ function applyDark(on){
   if(on)document.documentElement.setAttribute('data-dark','');
   else document.documentElement.removeAttribute('data-dark');
   document.getElementById('darkLabel').textContent=on?'Light':'Dark';
-  localStorage.setItem('finalcheck_dark',on?'1':'0');
 }
 function toggleDark(){applyDark(!document.documentElement.hasAttribute('data-dark'));}
 
@@ -1027,16 +1022,6 @@ function notifyNewUpdate(u){
   n.onclick=()=>{window.focus();n.close();};
 }
 function doRefresh(){loadData();toast('Refreshed');}
-// Sync once per hour automatically; the Refresh button remains available for immediate updates.
-function userIsEditing(){
-  const el=document.activeElement;
-  if(!el)return false;
-  if(['INPUT','TEXTAREA','SELECT'].includes(el.tagName))return true;
-  return false;
-}
-setInterval(()=>{
-  if(!document.hidden && !isSaving && !userIsEditing()) loadData();
-}, 3600000);
 
 function fillTimeSelects(){
   const pad=n=>String(n).padStart(2,'0');

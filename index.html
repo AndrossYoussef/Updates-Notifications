@@ -715,19 +715,16 @@ async function loadData() {
     links   = d.links   || [];
     cats    = (d.cats && d.cats.length) ? d.cats : JSON.parse(JSON.stringify(DEF_CATS));
   } catch(e) {
-    updates = JSON.parse(localStorage.getItem('finalcheck_u')||'[]');
-    links   = JSON.parse(localStorage.getItem('finalcheck_l')||'[]');
-    cats    = JSON.parse(localStorage.getItem('finalcheck_c')||JSON.stringify(DEF_CATS));
-    toast('⚠ Offline mode — changes saved locally only.');
+    updates = [];
+    links   = [];
+    cats    = JSON.parse(JSON.stringify(DEF_CATS));
+    toast('⚠ Remote database unavailable — this change was not saved.');
   }
   showLoader(false);
   buildCatSel(); buildSidebar(); buildTabs(); buildMemberFilter(); renderFeed(); renderLinks();
 }
 
 async function saveData() {
-  localStorage.setItem('finalcheck_u', JSON.stringify(updates));
-  localStorage.setItem('finalcheck_l', JSON.stringify(links));
-  localStorage.setItem('finalcheck_c', JSON.stringify(cats));
   if (isSaving) { saveQueued = true; return; }
   isSaving = true;
   showSaving(true);
@@ -742,7 +739,7 @@ async function saveData() {
       }
       const res = await fetch(`${API}/b/${DATA_BIN}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
         body: payload,
       });
       if (!res.ok) {
@@ -753,7 +750,7 @@ async function saveData() {
     } while (saveQueued);
   } catch(e) {
     console.error(e);
-    toast('⚠ Shared save failed — saved locally as backup.');
+    toast('⚠ Shared save failed — check your connection and try again.');
   }
   isSaving = false;
   showSaving(false);
@@ -775,7 +772,6 @@ function showSaving(on) {
 
 // ── INIT ──
 function init(){
-  if(localStorage.getItem('finalcheck_dark')==='1') applyDark(true);
   if('Notification' in window){ notificationsReady=Notification.permission==='granted'; updateNotificationButton(); }
   loadData();
   setupDrop('dropZone','fileIn','imgPrev',pendImgs);
@@ -997,6 +993,7 @@ async function uploadToCloudinary(dataUrl, filename){
   const blob=await (await fetch(dataUrl)).blob();
   form.append('file',blob,filename||'screenshot.jpg');
   form.append('upload_preset',CLOUDINARY_PRESET);
+  form.append('folder','updates-notifications');
   const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:form});
   if(!res.ok) throw new Error(`Cloudinary upload failed (${res.status})`);
   const data=await res.json();
@@ -1138,7 +1135,6 @@ function applyDark(on){
   if(on)document.documentElement.setAttribute('data-dark','');
   else document.documentElement.removeAttribute('data-dark');
   document.getElementById('darkLabel').textContent=on?'Light':'Dark';
-  localStorage.setItem('finalcheck_dark',on?'1':'0');
 }
 function toggleDark(){applyDark(!document.documentElement.hasAttribute('data-dark'));}
 
